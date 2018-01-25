@@ -1,2 +1,2 @@
 # serendip_api
-restful service that runs serendipo for you
+restful service that runs serendip for you
