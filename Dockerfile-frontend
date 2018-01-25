@@ -1,0 +1,13 @@
+FROM python:2.7
+
+
+# Install python modules
+WORKDIR /usr/src/app/
+COPY requirements.txt /usr/src/app/
+RUN pip install --no-cache-dir -r requirements.txt
+
+
+# Copy python code
+WORKDIR /usr/src/app/
+COPY serendip_api /usr/src/app/serendip_api
+COPY tests /usr/src/app/tests

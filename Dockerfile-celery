@@ -1,0 +1,48 @@
+FROM python:2.7
+
+RUN apt-get update && apt-get install -y muscle fort77 gcc g++ xorg-dev libreadline-dev gfortran perlbrew dos2unix
+
+# ncbi blast
+# version 2.2.26 for blastpgp
+WORKDIR /deps
+RUN wget -q ftp://ftp.ncbi.nlm.nih.gov/blast/executables/legacy.NOTSUPPORTED/2.2.26/blast-2.2.26-x64-linux.tar.gz -P /deps ;\
+    mkdir -p /deps/blast ;\
+    tar zxf /deps/blast-2.2.26-x64-linux.tar.gz -C /deps/blast --strip-components=1 && rm -f /deps/blast-2.2.26-x64-linux.tar.gz
+
+
+# Install R
+WORKDIR /deps
+RUN wget -q https://cran.rstudio.com/src/base/R-3/R-3.2.2.tar.gz -P /deps ;\
+    tar xzf /deps/R-3.2.2.tar.gz && rm -f /deps/R-3.2.2.tar.gz ;\
+    cd R-3.2.2 ;\
+    ./configure && make && make install
+
+
+# Install R modules
+WORKDIR /usr/src/app/
+ADD install.R /usr/src/app/install.R
+RUN Rscript install.R
+
+
+# Install perl 5.8.5
+RUN perlbrew init && perlbrew install --notest perl-5.8.5
+
+
+# Install python modules
+COPY requirements.txt /usr/src/app/
+RUN pip install --no-cache-dir -r requirements.txt
+
+
+# Install SeRenDip
+WORKDIR /deps
+COPY serendip.tar.gz /deps/serendip.tar.gz
+RUN tar xzf serendip.tar.gz && rm -f serendip.tar.gz
+RUN find serendip -type d -exec touch \{\}/__init__.py \;
+
+# Copy python code
+WORKDIR /usr/src/app
+COPY serendip_api /usr/src/app/serendip_api
+COPY tests /usr/src/app/tests
+
+# Environment variables
+ENV C_FORCE_ROOT true

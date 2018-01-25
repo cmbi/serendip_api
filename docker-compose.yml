@@ -1,0 +1,28 @@
+version: "2"
+
+services:
+  celery:
+    build:
+      context: .
+      dockerfile: Dockerfile-celery
+    depends_on:
+      - redis
+      - rabbitmq
+    command: celery -A serendip_api.application:celery worker -B -n serendip.%n
+    volumes:
+      - '/srv/serendip/results:/data/results'
+  frontend:
+    build:
+      context: .
+      dockerfile: Dockerfile-frontend
+    depends_on:
+      - celery
+    command: gunicorn -k gevent -b 0.0.0.0:6000 serendip_api.application:app
+    ports:
+      - "6000:6000"
+  redis:
+    image: redis
+    volumes:
+      - '/srv/serendip/redis:/data'
+  rabbitmq:
+    image: rabbitmq

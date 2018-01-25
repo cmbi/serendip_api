@@ -1,0 +1,11 @@
+version: "2"
+
+services:
+  frontend:
+    volumes:
+      - ".:/usr/src/app"
+    command: watchmedo auto-restart -d /usr/src/app -p "*.py" -D -R -- gunicorn -k gevent -b 0.0.0.0:6000 serendip_api.application:app
+  celery:
+    volumes:
+      - ".:/usr/src/app"
+    command: watchmedo auto-restart -d /usr/src/app -p "*.py" -D -R -- celery -A serendip_api.application:celery worker -B -n serendip.%n
