@@ -21,6 +21,32 @@ _log = logging.getLogger(__name__)
 
 
 @celery_app.task()
+def netsurf_hit(fasta_string):
+
+    out_dir = tempfile.mkdtemp()
+    try:
+        input_fasta_path = os.path.join(out_dir, 'input.fa')
+        output_hits_path = os.path.join(out_dir, 'output.myrsa')
+
+        with open(input_fasta_path, 'w') as f:
+            f.write(fasta_string)
+
+        cmd = [settings["NETSURF_EXE"],
+               "-i", input_fasta_path,
+               "-d", settings["NR70_DB"], "-a",
+               "-o", output_hits_path]
+        _log.info(cmd)
+        subprocess.call(cmd)
+
+        # clean up 'X-es' in output, so whitespace separated columns are retained:
+        cmd = ['/bin/sed', 's/^  X/- X/']
+        return subprocess.check_output(cmd, stdin=open(output_hits_path, 'r'))
+    finally:
+        if os.path.isdir(out_dir):
+            shutil.rmtree(out_dir)
+
+
+@celery_app.task()
 def predict(input_sequence):
     sys.path.append(settings["SERENDIP_DIR"])
     from sequence.entropy.lib.seq_lib import FastaParser
@@ -35,9 +61,10 @@ def predict(input_sequence):
         if os.path.isfile(results_path):
             return parse_serendip_results(open(results_path, 'r').read())
 
+        input_id = 'input'
+        out_dir = tempfile.mkdtemp()
+
         try:
-            input_id = 'input'
-            out_dir = tempfile.mkdtemp()
             out_file = os.path.join(out_dir, 'output.myrsa')
             input_fasta_path = os.path.join(out_dir, input_id + '.fa')
 
@@ -74,34 +101,13 @@ def predict(input_sequence):
             if result == 0:  # We have blast hits
 
                 # Netsurf on hits
-                netsurf_other_dir = os.path.join(out_dir, 'netsurf_other')
-                os.mkdir(netsurf_other_dir)
-                netsurf_seq_dir = os.path.join(out_dir, 'netsurf_seq')
-                os.mkdir(netsurf_seq_dir)
-
                 netsurf_append_path = os.path.join(out_dir, 'output_other.myrsa')
-                n = 0
-                for seq in FastaParser(open(blast_hits_path, 'r')):
-                    n += 1
-                    fasta_path = os.path.join(netsurf_seq_dir, 'sequence_%i.fa' % n)
-                    netsurf_path = os.path.join(netsurf_other_dir, 'netsurfp_%i' % n)
+                subtasks = [netsurf_hit.delay(str(seq))
+                            for seq in FastaParser(open(blast_hits_path, 'r'))]
 
-                    with open(fasta_path, 'w') as f:
-                        f.write(str(seq))
-
-                    cmd = [settings["NETSURF_EXE"],
-                           "-i", fasta_path,
-                           "-d", settings["NR70_DB"], "-a",
-                           "-o", netsurf_path]
-                    _log.info(cmd)
-                    subprocess.call(cmd)
-
-                    # clean up 'X-es' in output, so whitespace separated columns are retained:
-                    cmd=['/bin/sed', 's/^  X/- X/']
-                    _log.info(cmd)
-                    subprocess.call(cmd, stdin=open(netsurf_path, 'r'),
-                                         stdout=open(netsurf_append_path, 'a'))
-
+                with open(netsurf_append_path, 'w') as f:
+                    for subtask in subtasks:
+                        f.write(subtask.get())
 
                 # Append input sequence to blast hits for alignment as input for entropy and DynaMine
                 with open(blast_hits_path, 'a') as f:
