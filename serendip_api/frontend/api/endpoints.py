@@ -3,7 +3,7 @@ import logging
 from flask import Blueprint, jsonify, request, Response
 
 
-bp = Blueprint('serendip', __name__, url_prefix='/api')
+bp = Blueprint('api', __name__, url_prefix='/api')
 
 _log = logging.getLogger(__name__)
 

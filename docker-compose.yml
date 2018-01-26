@@ -17,9 +17,9 @@ services:
       dockerfile: Dockerfile-frontend
     depends_on:
       - celery
-    command: gunicorn -k gevent -b 0.0.0.0:6000 serendip_api.application:app
+    command: gunicorn -k gevent -b 0.0.0.0:6001 serendip_api.application:app
     ports:
-      - "6000:6000"
+      - "6001:6001"
   redis:
     image: redis
     volumes:

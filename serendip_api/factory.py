@@ -9,7 +9,9 @@ _log = logging.getLogger(__name__)
 
 
 def create_app(settings=None):
-    app = Flask(__name__)
+    app = Flask(__name__, static_folder='frontend/static',
+                template_folder='frontend/templates')
+
     app.config.from_object('serendip_api.default_settings')
 
     # Ignore Flask's built-in logging
@@ -23,6 +25,8 @@ def create_app(settings=None):
 
     # Register blueprints
     from serendip_api.frontend.api.endpoints import bp
+    app.register_blueprint(bp)
+    from serendip_api.frontend.dashboard.views import bp
     app.register_blueprint(bp)
 
     return app
