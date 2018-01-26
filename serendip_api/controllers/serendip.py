@@ -2,7 +2,7 @@
 
 def parse_serendip_results(data_string):
 
-    lines = data_string.split('\n')
+    lines = data_string.strip().split('\n')
     header = lines[0]
     rows = lines[1:]
 
