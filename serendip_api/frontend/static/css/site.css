@@ -1,0 +1,23 @@
+* {
+  font-family: "Arial";
+}
+
+th {
+  background-color: #ADD8E6;
+  border: 1px Solid #2f506c;
+  color: #2f506c;
+}
+
+td {
+  background-color: white;
+  border: 1px Solid #2f506c;
+  color: #2f506c;
+}
+
+th, td {
+  padding: 5px;
+  margin: 0;
+}
+table {
+  border-collapse: collapse;
+}
