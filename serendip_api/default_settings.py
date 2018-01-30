@@ -22,3 +22,12 @@ RSCRIPT_EXE = "/usr/local/bin/Rscript"
 RF_SCRIPT = "/deps/serendip/sequence/server_data_transformation.R"
 SERENDIP_DIR = "/deps/serendip"
 RESULTS_DIR = "/data/results"
+
+YASARA_SEQUENCE_MACRO = "/usr/src/app/serendip_api/macros/protein_sequence.mcr"
+YASARA_SCENE_MACRO = "/usr/src/app/serendip_api/macros/protein_scene.mcr"
+
+POLL_INTERVAL = 10  # seconds
+BLAST_TIMEOUT = 10800  # three hours
+SOAP_TIMEOUT = 90  # seconds
+MRS_BLAST_URL = "http://mrs.cmbi.umcn.nl/mrsws/blast/wsdl"
+YASARA_URL = "http://chelonium.cmbi.umcn.nl:7000/api"

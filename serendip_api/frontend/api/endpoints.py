@@ -1,9 +1,10 @@
 import logging
+import json
 
 from flask import Blueprint, jsonify, request, Response
 
 
-bp = Blueprint('serendip', __name__, url_prefix='/api')
+bp = Blueprint('api', __name__, url_prefix='/api')
 
 _log = logging.getLogger(__name__)
 
@@ -63,3 +64,28 @@ def result(jobid):
     response = {'data': data}
 
     return jsonify(response)
+
+
+@bp.route('/yasara_scene/', methods=['POST'])
+def yasara_scene():
+    """
+    Download a yasara scene
+    """
+
+    data = request.form.get('serendip_data', None)
+    if data is None or len(data) <= 0:
+        return jsonify({'error': 'invalid input'}), 400
+
+    data = json.loads(data)
+
+    from serendip_api.tasks import yasara_scene as ys
+    try:
+        scene_result = ys.apply_async((data,))
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
+
+    # put binary data in html response:
+    response = Response(scene_result.get(), mimetype='application/octet-stream')
+    response.headers["Content-Disposition"] = "attachment; filename=prediction.sce"
+
+    return response

@@ -4,10 +4,13 @@ import shutil
 import subprocess
 import tempfile
 import logging
-import md5
 
 from celery import current_app as celery_app
 from filelock import FileLock
+
+from serendip_api.controllers.muscle import muscle_align
+from serendip_api.controllers.yasara import make_yasara_scene
+from serendip_api.controllers.method import get_sequence_hash
 
 settings = {}
 config_path = os.path.join("serendip_api", "default_settings.py")
@@ -52,7 +55,7 @@ def predict(input_sequence):
     from sequence.entropy.lib.seq_lib import FastaParser
     from Bio.Blast import NCBIStandalone
 
-    sequence_hash = md5.new(input_sequence).hexdigest()
+    sequence_hash = get_sequence_hash(input_sequence)
     results_path = os.path.join(settings["RESULTS_DIR"], sequence_hash)
     lock_path = results_path + ".lock"
 
@@ -172,3 +175,26 @@ def predict(input_sequence):
         finally:
             if os.path.isdir(out_dir):
                 shutil.rmtree(out_dir)
+
+
+@celery_app.task()
+def yasara_scene(serendip_data):
+    _log.info("generating scene for data {}".format(serendip_data))
+
+    sequence = ""
+    for record in serendip_data:
+        sequence += record["AliSeq"]
+
+    sequence_hash = get_sequence_hash(sequence)
+
+    scene_path = os.path.join(settings["RESULTS_DIR"], sequence_hash + ".sce")
+    lock_path = scene_path + ".lock"
+
+    if os.path.isfile(scene_path):
+        return open(scene_path, 'rb').read()
+    else:
+        with FileLock(lock_path):
+            scene_data = make_yasara_scene(serendip_data)
+
+            open(scene_path, 'wb').write(scene_data)
+            return scene_data

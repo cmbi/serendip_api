@@ -12,3 +12,4 @@ kombu==3.0.37
 watchdog==0.8.3
 wsgiref==0.1.2
 filelock==0.2.2
+zeep==2.0.0

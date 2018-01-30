@@ -1,0 +1,120 @@
+<html>
+  <head>
+    <link href="{{ url_for('static', filename='css/site.css') }}" rel="stylesheet"></script>
+
+    <script src="http://code.jquery.com/jquery-3.3.1.min.js" type="text/javascript"></script>
+    <script type="text/javascript">
+      function submitSerendipSequence() {
+
+        var sequence = $("#serendip_sequence_area").val().replace(/\s+/g,"");
+
+        $.post("{{ url_for('api.submit') }}", {'sequence': sequence},
+          function(data) {
+            // sequence has just been submitted, recieved a job id
+
+            $("body").css("cursor", "progress");
+            $("#input_div").show();
+            $("#results").hide();
+            $("#input_sequence").text(sequence);
+            $("#please_wait").show();
+
+            checkStatus(data.jobid);
+        });
+      }
+
+      function checkStatus(jobid) {
+
+        $.get("{{ url_for('api.status', jobid='xxxxx') }}".replace("xxxxx", jobid),
+          function(data) {
+            // Recieved a status
+
+            if (data.status == "PENDING" || data.status == "STARTED")
+            {
+              setTimeout(function(){ checkStatus(jobid); }, 10000);
+            }
+            else if (data.status == "FAILURE" || data.status == "REVOKED")
+            {
+              alert(data.error);
+            }
+            else if (data.status == "SUCCESS")
+            {
+              retrieveResult(jobid);
+            }
+        });
+      }
+
+      function retrieveResult(jobid)
+      {
+        $.get("{{ url_for('api.result', jobid='xxxxx') }}".replace("xxxxx", jobid),
+          function(data) {
+            // Recieved a result
+
+            $("body").css("cursor", "default");
+
+            displayData(data.data);
+
+            $("#scene_data").val(JSON.stringify(data.data));
+            $("#results").show();
+            $("#please_wait").hide();
+        });
+      }
+
+      var dataHeader = ['AliSeq', 'model1', 'model2', 'model3', 'model4', 'model5', 'average', 'prediction', 'stdev', 'zscore'];
+
+      function displayData(data)
+      {
+        var table = "<table>";
+
+        table += "<thead><tr>";
+        for (var j = 0; j < dataHeader.length; j++)
+          table += "<th>" + dataHeader[j] + "</th>";
+        table += "</tr></thead>";
+
+        table += "<tbody>";
+        for (var i = 0; i < data.length; i++)
+        {
+          var record = data[i];
+          table += "<tr>";
+          for (var j = 0; j < dataHeader.length; j++)
+            table += "<td>" + record[dataHeader[j]] + "</td>";
+          table += "</tr>";
+        }
+        table += "</tbody></table>";
+        $("#serendip_data").html(table);
+      }
+    </script>
+  </head>
+  <body>
+    <h1>Welcome to the CMBI Serendip API</h1>
+    <h4>For the official site, see: <a target="new" href="http://www.ibi.vu.nl/programs/serendipwww/">http://www.ibi.vu.nl/programs/serendipwww/</a></h4>
+    <div id="serendip_form">
+      <form onsubmit="submitSerendipSequence(); return false;">
+        <textarea id="serendip_sequence_area"
+                  name="sequence"
+                  placeholder="Enter a Sequence" style="width:800px;height:100px"></textarea>
+        <div>
+          <input type="submit" value="Submit"></input>
+        </div>
+      </form>
+    </div>
+    <div id="input_div" style="display:none">
+      <h2>Input Sequence:</h2>
+      <pre id="input_sequence">
+      </pre>
+      <p id="please_wait">
+        <i>Please wait for your data..</i>
+      </p>
+    </div>
+    <div id="results" style="display:none">
+      <h2>Results:</h2>
+      <div id="scene_download">
+        <form method="post" action="{{ url_for('api.yasara_scene')}}">
+          <input id="scene_data" type="hidden" name="serendip_data"></input> 
+          <input type="submit" value="Download Yasara Scene"></input>
+        </form>
+      </div>
+      <div id="serendip_data">
+      </div>
+    </div>
+  </body>
+<html>
