@@ -42,6 +42,9 @@
             // Recieved a result
 
             displayData(data.data);
+
+            $("#scene_data").val(JSON.stringify(data.data));
+            $("#scene_download").show();
         });
       }
 
@@ -76,6 +79,12 @@
       </textarea>
       <input type="submit" value="Submit"></input>
     </form>
+    <div id="scene_download" style="display:none">
+      <form method="post" action="{{ url_for('api.yasara_scene')}}">
+        <input id="scene_data" type="hidden" name="serendip_data"></input> 
+        <input type="submit" value="Download Yasara Scene"></input>
+      </form>
+    </div>
     <div id="serendip_data">
     </div>
   </body>
