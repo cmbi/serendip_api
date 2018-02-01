@@ -43,7 +43,7 @@ def status(jobid):
 
     response = {'status': job_status}
     if result.failed():
-        response['message'] = str(result.traceback)
+        response['error'] = str(result.traceback)
 
     return jsonify(response)
 
