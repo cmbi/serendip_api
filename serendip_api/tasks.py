@@ -169,7 +169,12 @@ def predict(input_sequence):
 
             shutil.copyfile(output_result_path, results_path)
 
-            return parse_serendip_results(open(results_path, 'r').read())
+            data = parse_serendip_results(open(results_path, 'r').read())
+
+            # Start making the scene:
+            yasara_scene.delay(data)
+
+            return data
 
         finally:
             if os.path.isdir(out_dir):
