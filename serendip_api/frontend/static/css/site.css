@@ -21,3 +21,8 @@ th, td {
 table {
   border-collapse: collapse;
 }
+
+#input_sequence {
+  word-wrap: break-word;
+  font-family: "Courier New"
+}
