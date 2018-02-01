@@ -129,6 +129,10 @@ def predict(input_sequence):
                 alignment_path = input_fasta_path
                 blast_hits_path = input_fasta_path
 
+                netsurf_append_path = os.path.join(out_dir, 'output_other.myrsa')
+                with open(netsurf_append_path, 'w') as f:
+                    f.write('')
+
 
             # Alignment position entropies
             entropy_path = os.path.join(out_dir, "output.entropy")
@@ -165,9 +169,10 @@ def predict(input_sequence):
             os.chdir(out_dir)
             subprocess.call(cmd)
 
-            os.listdir(out_dir)
-
             output_result_path = os.path.join(out_dir, input_id + '.out')
+            if not os.path.isfile(output_result_path):
+                raise Exception("No ouput generated")
+
             shutil.copyfile(output_result_path, results_path)
 
             return parse_serendip_results(open(results_path, 'r').read())
