@@ -87,11 +87,12 @@ def make_yasara_scene(serendip_data):
                     continue
 
                 n = len(alignment['q'][:i].replace('-', ''))
+                m = len(alignment['y'][:i].replace('-', ''))
 
                 if interface[n]:
-                    f.write("ColRes %i,blue\n" % (i + 1))
+                    f.write("ColRes %i,blue\n" % (m + 1))
                 else:
-                    f.write("ColRes %i,red\n" % (i + 1))
+                    f.write("ColRes %i,red\n" % (m + 1))
 
             # Save the scene to be returned by the service
             f.write("SaveSce %s" % scene_name)
