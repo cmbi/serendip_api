@@ -8,18 +8,21 @@
 
         var sequence = $("#serendip_sequence_area").val().replace(/\s+/g,"");
 
-        $.post("{{ url_for('api.submit') }}", {'sequence': sequence},
-          function(data) {
-            // sequence has just been submitted, recieved a job id
+        if (sequence.match(/[A-Z]+/))
+          $.post("{{ url_for('api.submit') }}", {'sequence': sequence},
+            function(data) {
+              // sequence has just been submitted, recieved a job id
 
-            $("body").css("cursor", "progress");
-            $("#input_div").show();
-            $("#results").hide();
-            $("#input_sequence").text(sequence);
-            $("#please_wait").show();
+              $("body").css("cursor", "progress");
+              $("#input_div").show();
+              $("#results").hide();
+              $("#input_sequence").text(sequence);
+              $("#please_wait").show();
 
-            checkStatus(data.jobid);
-        });
+              checkStatus(data.jobid);
+          });
+        else
+          alert("Please insert a REAL protein sequence!");
       }
 
       function checkStatus(jobid) {
@@ -34,7 +37,11 @@
             }
             else if (data.status == "FAILURE" || data.status == "REVOKED")
             {
-              alert(data.error);
+              $("body").css("cursor", "default");
+              $("#please_wait").hide();
+
+              var errorLines = data.error.match(/[^\r\n]+/g);
+              alert(errorLines[errorLines.length - 1]);
             }
             else if (data.status == "SUCCESS")
             {
@@ -99,8 +106,8 @@
     </div>
     <div id="input_div" style="display:none">
       <h2>Input Sequence:</h2>
-      <pre id="input_sequence">
-      </pre>
+      <p id="input_sequence" style="width:800px">
+      </p>
       <p id="please_wait">
         <i>Please wait for your data..</i>
       </p>
