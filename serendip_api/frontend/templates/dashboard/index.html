@@ -45,6 +45,7 @@
             {
               $("body").css("cursor", "default");
               $("#please_wait").hide();
+              $("#sequence_input").show();
 
               var errorLines = data.error.match(/[^\r\n]+/g);
               alert(errorLines[errorLines.length - 1]);
