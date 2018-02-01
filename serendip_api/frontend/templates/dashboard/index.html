@@ -8,7 +8,7 @@
 
         var sequence = $("#serendip_sequence_area").val().replace(/\s+/g,"");
 
-        if (sequence.match(/[A-Z]+/))
+        if (sequence.match(/^[A-Z]+$/))
           $.post("{{ url_for('api.submit') }}", {'sequence': sequence},
             function(data) {
               // sequence has just been submitted, recieved a job id
@@ -18,8 +18,14 @@
               $("#results").hide();
               $("#input_sequence").text(sequence);
               $("#please_wait").show();
+              $("#sequence_input").hide();
 
               checkStatus(data.jobid);
+          })
+          .fail(function(jqXHR, textStatus, message) {
+
+            var data = JSON.parse(jqXHR.responseText);
+            alert(data.error);
           });
         else
           alert("Please insert a REAL protein sequence!");
@@ -94,7 +100,7 @@
   <body>
     <h1>Welcome to the CMBI Serendip API</h1>
     <h4>For the official site, see: <a target="new" href="http://www.ibi.vu.nl/programs/serendipwww/">http://www.ibi.vu.nl/programs/serendipwww/</a></h4>
-    <div id="serendip_form">
+    <div id="sequence_input">
       <form onsubmit="submitSerendipSequence(); return false;">
         <textarea id="serendip_sequence_area"
                   name="sequence"
