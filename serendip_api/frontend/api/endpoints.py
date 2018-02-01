@@ -1,5 +1,6 @@
 import logging
 import json
+import re
 
 from flask import Blueprint, jsonify, request, Response
 
@@ -7,6 +8,9 @@ from flask import Blueprint, jsonify, request, Response
 bp = Blueprint('api', __name__, url_prefix='/api')
 
 _log = logging.getLogger(__name__)
+
+
+sequence_p = re.compile(r'^[A-Z]+$')
 
 
 @bp.route('/submit/', methods=['POST'])
@@ -19,8 +23,8 @@ def submit():
     """
 
     sequence = request.form.get('sequence', None)
-    if sequence is None or len(sequence) <= 0:
-        return jsonify({'error': 'invalid input'}), 400
+    if sequence is None or len(sequence) <= 0 or not sequence_p.match(sequence):
+        return jsonify({'error': 'invalid sequence input'}), 400
 
     from serendip_api.tasks import predict
     result = predict.apply_async((sequence,))

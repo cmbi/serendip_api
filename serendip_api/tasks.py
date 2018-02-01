@@ -124,14 +124,8 @@ def predict(input_sequence):
                 _log.info(cmd)
                 subprocess.call(cmd)
 
-            else:  # No blast hits
-
-                alignment_path = input_fasta_path
-                blast_hits_path = input_fasta_path
-
-                netsurf_append_path = os.path.join(out_dir, 'output_other.myrsa')
-                with open(netsurf_append_path, 'w') as f:
-                    f.write('')
+            else:
+                raise Exception("No blast hits for input sequence")
 
 
             # Alignment position entropies
