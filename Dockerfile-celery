@@ -18,6 +18,12 @@ RUN wget -q https://cran.rstudio.com/src/base/R-3/R-3.2.2.tar.gz -P /deps ;\
     ./configure && make && make install
 
 
+# Install python modules
+WORKDIR /usr/src/app/
+ADD requirements.txt /usr/src/app/requirements.txt
+RUN pip install --no-cache-dir -r requirements.txt
+
+
 # Install R modules
 WORKDIR /usr/src/app/
 ADD install.R /usr/src/app/install.R
@@ -26,12 +32,7 @@ RUN Rscript install.R
 
 # Install perl 5.8.5
 RUN perlbrew init && perlbrew install --notest perl-5.8.5
-
-
-# Install python modules
-COPY requirements.txt /usr/src/app/
-RUN pip install --no-cache-dir -r requirements.txt
-
+RUN ln -sf /root/perl5/perlbrew/perls/perl-5.8.5/bin/perl /usr/bin/perl
 
 # Install SeRenDip
 WORKDIR /deps
