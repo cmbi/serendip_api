@@ -4,8 +4,9 @@ import shutil
 import subprocess
 import tempfile
 import logging
+from threading import Thread
 
-from celery import current_app as celery_app
+from celery import current_app as celery_app, group
 from filelock import FileLock
 
 from serendip_api.controllers.muscle import muscle_align
@@ -23,31 +24,43 @@ from serendip_api.controllers.serendip import parse_serendip_results
 _log = logging.getLogger(__name__)
 
 
-@celery_app.task()
-def netsurf_hit(fasta_string):
+class _NetsurfHitThread(Thread):
+    def __init__(self, fasta_string):
+        Thread.__init__(self)
+        self.fasta_string = fasta_string
 
-    out_dir = tempfile.mkdtemp()
-    try:
-        input_fasta_path = os.path.join(out_dir, 'input.fa')
-        output_hits_path = os.path.join(out_dir, 'output.myrsa')
+    def run(self):
+        out_dir = tempfile.mkdtemp()
+        try:
+            input_fasta_path = os.path.join(out_dir, 'input.fa')
+            output_hits_path = os.path.join(out_dir, 'output.myrsa')
 
-        with open(input_fasta_path, 'w') as f:
-            f.write(fasta_string)
+            with open(input_fasta_path, 'w') as f:
+                f.write(self.fasta_string)
 
-        cmd = [settings["NETSURF_EXE"],
-               "-i", input_fasta_path,
-               "-d", settings["NR70_DB"], "-a",
-               "-o", output_hits_path]
-        _log.info(cmd)
-        subprocess.call(cmd)
+            cmd = [settings["NETSURF_EXE"],
+                   "-i", input_fasta_path,
+                   "-d", settings["NR70_DB"], "-a",
+                   "-o", output_hits_path]
+            _log.info(cmd)
+            subprocess.call(cmd)
 
-        # clean up 'X-es' in output, so whitespace separated columns are retained:
-        cmd = ['/bin/sed', 's/^  X/- X/']
-        return subprocess.check_output(cmd, stdin=open(output_hits_path, 'r'))
-    finally:
-        if os.path.isdir(out_dir):
-            shutil.rmtree(out_dir)
+            # clean up 'X-es' in output, so whitespace separated columns are retained:
+            cmd = ['/bin/sed', 's/^  X/- X/']
+            self.result = subprocess.check_output(cmd, stdin=open(output_hits_path, 'r'))
+        except:
+            self.exc_type, self.exc, self.tb = sys.exc_info()
+        finally:
+            if os.path.isdir(out_dir):
+                shutil.rmtree(out_dir)
 
+    def get(self):
+        self.join()
+
+        if hasattr(self, 'exc'):
+            raise self.exc_type(self.exc).with_traceback(self.tb)
+        else:
+            return self.result
 
 @celery_app.task()
 def predict(input_sequence):
@@ -100,17 +113,21 @@ def predict(input_sequence):
             _log.info(cmd)
             result = subprocess.call(cmd)
 
-
             if result == 0:  # We have blast hits
 
                 # Netsurf on hits
                 netsurf_append_path = os.path.join(out_dir, 'output_other.myrsa')
-                subtasks = [netsurf_hit.delay(str(seq))
-                            for seq in FastaParser(open(blast_hits_path, 'r'))]
+
+                threads = []
+                with open(blast_hits_path, 'r') as g:
+                    for seq in FastaParser(g):
+                        t = _NetsurfHitThread(str(seq))
+                        threads.append(t)
+                        t.start()
 
                 with open(netsurf_append_path, 'w') as f:
-                    for subtask in subtasks:
-                        f.write(subtask.get())
+                    for t in threads:
+                        f.write(t.get())
 
                 # Append input sequence to blast hits for alignment as input for entropy and DynaMine
                 with open(blast_hits_path, 'a') as f:
@@ -123,7 +140,6 @@ def predict(input_sequence):
                        "-out", alignment_path]
                 _log.info(cmd)
                 subprocess.call(cmd)
-
             else:
                 raise Exception("No blast hits for input sequence")
 
