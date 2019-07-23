@@ -2,12 +2,12 @@ from kombu import Exchange, Queue
 
 # Celery
 CELERY_ACCEPT_CONTENT = ['pickle', 'json', 'msgpack', 'yaml']
-CELERY_BROKER_URL = 'amqp://guest@serendip_api_rabbitmq_1'
+CELERY_BROKER_URL = 'amqp://guest@serendipapi_rabbitmq_1'
 CELERY_DEFAULT_QUEUE = 'serendip'
 CELERY_QUEUES = ( 
     Queue('serendip', Exchange('serendip'), routing_key='serendip'),
 )
-CELERY_RESULT_BACKEND = 'redis://serendip_api_redis_1/0'
+CELERY_RESULT_BACKEND = 'redis://serendipapi_redis_1/0'
 CELERY_TRACK_STARTED = True
 
 # Flask
