@@ -1,5 +1,5 @@
 amqp==2.5.0
-redis==3.2.1
+redis==4.4.4
 Flask==1.1.1
 gunicorn==19.9.0
 gevent==1.4.0
